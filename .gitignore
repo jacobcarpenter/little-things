@@ -1,0 +1,26 @@
+# ignore Subversion
+.svn/
+
+# ignore output folders
+bin/
+obj/
+ipch/
+
+# ignore solution version information
+common/*/SolutionInfo.*
+
+# ignore user-specific options files
+Thumbs.db
+*.sln.cache
+*.ncb
+*.suo
+*.csproj.user
+*.vcproj.*.user
+*.vcxproj.user
+_ReSharper.*
+*.resharper
+*.ReSharper
+*.resharper.user
+*.ReSharper.user
+*.sdf
+*.opensdf
