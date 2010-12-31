@@ -97,12 +97,17 @@ namespace GameOfLife
 		/// <returns></returns>
 		public LifeGrid Step()
 		{
+			bool skippedLast = false;
 			byte[] newState = new byte[m_state.Count];
 
 			for (int blockIndex = 0; blockIndex < m_state.Count; blockIndex++)
 			{
 				int y = blockIndex / m_bytesPerRow;
 				int blockColumn = blockIndex % m_bytesPerRow;
+
+				// if we're starting a new row, reset skippedLast
+				if (blockColumn == 0)
+					skippedLast = false;
 
 				int indexBlockAbove = ((y + m_height - 1) % m_height) * m_bytesPerRow + blockColumn;
 				int indexBlockBelow = ((y + 1) % m_height) * m_bytesPerRow + blockColumn;
@@ -115,14 +120,31 @@ namespace GameOfLife
 				if (blockColumn == m_bytesPerRow - 1)
 					rightBlockOffset -= m_bytesPerRow;
 
-				// if the current and surrounding blocks don't contain any live cells ...
-				if ((m_state[indexBlockAbove + leftBlockOffset] + m_state[indexBlockAbove] + m_state[indexBlockAbove + rightBlockOffset] +
-					m_state[blockIndex + leftBlockOffset] + m_state[blockIndex] + m_state[blockIndex + rightBlockOffset] +
-					m_state[indexBlockBelow + leftBlockOffset] + m_state[indexBlockBelow] + m_state[indexBlockBelow + rightBlockOffset]) == 0)
+				if (skippedLast && 
+					m_state[indexBlockAbove + rightBlockOffset] +
+					m_state[blockIndex + rightBlockOffset] +
+					m_state[indexBlockBelow + rightBlockOffset] == 0)
 				{
-					// ... skip it.
+					// Optimization (see below): if we skipped the last block, we only need to look at the 
+					//   blocks in the column to the right of this block. This saves a few indexed accesses.
 					continue;
 				}
+				else if (
+					m_state[indexBlockAbove + leftBlockOffset] + m_state[indexBlockAbove] + m_state[indexBlockAbove + rightBlockOffset] +
+					m_state[blockIndex + leftBlockOffset] + m_state[blockIndex] + m_state[blockIndex + rightBlockOffset] +
+					m_state[indexBlockBelow + leftBlockOffset] + m_state[indexBlockBelow] + m_state[indexBlockBelow + rightBlockOffset] == 0)
+				{
+					// Sum the 3x3 grid of blocks that surround the current block (including it).
+					//   If the result is zero, there are no live cells anywhere in the area, and
+					//   thus, no chance of any of the cells in this block coming to life. Skip it.
+					skippedLast = true;
+					continue;
+				}
+
+				// TODO: cache bytes to avoid more indexed accesses below?
+
+				// not skipping; clear skippedLast
+				skippedLast = false;
 
 				for (int cellIndex = 0; cellIndex < 8; cellIndex++)
 				{
