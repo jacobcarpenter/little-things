@@ -1,13 +1,12 @@
 ﻿
 using System;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
 using GameOfLife;
 
 namespace WpfGameOfLife
 {
-	sealed class LifeGridControl : Control
+	sealed class LifeGridControl : FrameworkElement
 	{
 		public LifeGridControl(LifeGrid initialGrid)
 		{
