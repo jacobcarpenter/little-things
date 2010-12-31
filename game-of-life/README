@@ -1,0 +1,8 @@
+
+This is an implementation of (a variation of) Conway's Game of Life: http://en.wikipedia.org/wiki/Conway's_Game_of_Life. It's a variation in that, instead of an infinite plane, the "universe" is toroidal. (That means the edges work like Pac-Man.)
+
+There is a library that contains the implementation of the Game of Life rules (see the GameOfLife.LifeGrid class).
+
+There is also a WPF application (WpfGameOfLife) that you can run to see the rules in action.
+
+Neither are intended to be used as examples of C#/WPF best practices, but hopefully there's something you find interesting in there.
