@@ -10,8 +10,8 @@ namespace DataStructures
 	{
 		public MyDictionary(IEqualityComparer<TKey> comparer = null, int? initialCapacity = null)
 		{
-			m_comparer = comparer ?? EqualityComparer<TKey>.Default;
 			m_buckets = new DictionaryEntry[initialCapacity ?? c_defaultInitialCapacity];
+			m_comparer = comparer ?? EqualityComparer<TKey>.Default;
 		}
 
 		public void Add(TKey key, TValue value)
@@ -19,62 +19,40 @@ namespace DataStructures
 			if (m_count == BucketCount)
 				Resize();
 
-			int bucketIndex = GetBucketIndex(key);
+			FindResult result;
+			if (FindEntryForKey(key, out result))
+				throw new ArgumentException("Entry for specified key already exists.", "key");
 
-			DictionaryEntry currentEntry = m_buckets[bucketIndex];
-			while (currentEntry != null)
-			{
-				if (IsKeyForEntry(key, currentEntry))
-					throw new ArgumentException("Entry for specified key already exists.", "key");
-
-				currentEntry = currentEntry.NextEntry;
-			}
-
-			var entry = new DictionaryEntry(key, value, nextEntry: m_buckets[bucketIndex]);
-			m_buckets[bucketIndex] = entry;
+			DictionaryEntry entry = new DictionaryEntry(key, value, m_buckets[result.BucketIndex]);
+			m_buckets[result.BucketIndex] = entry;
 			m_count++;
 		}
 
 		public bool Remove(TKey key)
 		{
-			int bucketIndex = GetBucketIndex(key);
+			FindResult result;
+			if (!FindEntryForKey(key, out result))
+				return false;
 
-			DictionaryEntry lastEntry = null;
-			DictionaryEntry currentEntry = m_buckets[bucketIndex];
-			while (currentEntry != null)
-			{
-				if (IsKeyForEntry(key, currentEntry))
-				{
-					if (lastEntry == null)
-						m_buckets[bucketIndex] = currentEntry.NextEntry;
-					else
-						lastEntry.NextEntry = currentEntry.NextEntry;
+			DictionaryEntry toRemove = result.Entry;
+			DictionaryEntry preceding = result.PrecedingEntry;
 
-					m_count--;
-					return true;
-				}
+			if (preceding == null)
+				m_buckets[result.BucketIndex] = toRemove.NextEntry;
+			else
+				preceding.NextEntry = toRemove.NextEntry;
 
-				lastEntry = currentEntry;
-				currentEntry = currentEntry.NextEntry;
-			}
-
-			return false;
+			m_count--;
+			return true;
 		}
 
 		public bool TryGetValue(TKey key, out TValue value)
 		{
-			int bucketIndex = GetBucketIndex(key);
-
-			DictionaryEntry currentEntry = m_buckets[bucketIndex];
-			while (currentEntry != null)
+			FindResult result;
+			if (FindEntryForKey(key, out result))
 			{
-				if (IsKeyForEntry(key, currentEntry))
-				{
-					value = currentEntry.Value;
-					return true;
-				}
-
-				currentEntry = currentEntry.NextEntry;
+				value = result.Entry.Value;
+				return true;
 			}
 
 			value = default(TValue);
@@ -84,6 +62,27 @@ namespace DataStructures
 		private int BucketCount
 		{
 			get { return m_buckets.Length; }
+		}
+
+		private bool FindEntryForKey(TKey key, out FindResult findResult)
+		{
+			DictionaryEntry lastEntry = null;
+			int bucketIndex = GetBucketIndex(key);
+			DictionaryEntry currentEntry = m_buckets[bucketIndex];
+			while (currentEntry != null)
+			{
+				if (IsKeyForEntry(key, currentEntry))
+				{
+					findResult = new FindResult(bucketIndex, currentEntry, lastEntry);
+					return true;
+				}
+
+				lastEntry = currentEntry;
+				currentEntry = currentEntry.NextEntry;
+			}
+
+			findResult = new FindResult(bucketIndex);
+			return false;
 		}
 
 		private void Resize()
@@ -122,9 +121,23 @@ namespace DataStructures
 			return Math.Abs(hashCode % BucketCount);
 		}
 
+		struct FindResult
+		{
+			public FindResult(int bucketIndex, DictionaryEntry entry = null, DictionaryEntry precedingEntry = null)
+			{
+				BucketIndex = bucketIndex;
+				Entry = entry;
+				PrecedingEntry = precedingEntry;
+			}
+
+			public readonly int BucketIndex;
+			public readonly DictionaryEntry Entry;
+			public readonly DictionaryEntry PrecedingEntry;
+		}
+
 		sealed class DictionaryEntry
 		{
-			public DictionaryEntry(TKey key, TValue value, DictionaryEntry nextEntry = null)
+			public DictionaryEntry(TKey key, TValue value, DictionaryEntry nextEntry)
 			{
 				Key = key;
 				Value = value;
@@ -137,7 +150,7 @@ namespace DataStructures
 
 			public DictionaryEntry NextEntry { get; set; }
 		}
-
+	
 		const int c_defaultInitialCapacity = 5;
 
 		readonly IEqualityComparer<TKey> m_comparer;
