@@ -6,6 +6,9 @@ bin/
 obj/
 ipch/
 
+# ignore nuget packages
+packages/
+
 # ignore solution version information
 common/*/SolutionInfo.*
 
