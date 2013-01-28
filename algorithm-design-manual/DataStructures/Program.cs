@@ -19,12 +19,12 @@ namespace DataStructures
 
 		static void TestPriorityQueue()
 		{
-			var queue = new PriorityQueue<int>();
+			var queue = PriorityQueue<int>.CreateMaxPriorityQueue();
 
-			for (int n = 1; n <= 100; n++)
+			foreach (int n in Enumerable.Range(1, 100))
 				queue.Enqueue(n);
 	
-			for (int n = 1; n <= 100; n++)
+			while (queue.Count > 0)
 				Console.WriteLine(queue.Dequeue());
 		}
 

@@ -6,13 +6,16 @@ using System.Threading.Tasks;
 
 namespace DataStructures
 {
-	public sealed class PriorityQueue<T>
+	public abstract class PriorityQueue<T>
 	{
-		// TODO: constructor with initial values? Or maybe a create method?
-		public PriorityQueue(IComparer<T> comparer = null, int? initialCapacity = null)
+		public static PriorityQueue<T> CreateMinPriorityQueue(IComparer<T> comparer = null, int? initialCapacity = null)
 		{
-			m_comparer = comparer ?? Comparer<T>.Default;
-			m_heap = new T[initialCapacity ?? c_defaultInitialCapacity];
+			return new MinPriorityQueue(comparer, initialCapacity);
+		}
+
+		public static PriorityQueue<T> CreateMaxPriorityQueue(IComparer<T> comparer = null, int? initialCapacity = null)
+		{
+			return new MaxPriorityQueue(comparer, initialCapacity);
 		}
 
 		public int Count
@@ -22,17 +25,12 @@ namespace DataStructures
 
 		public void Enqueue(T item)
 		{
-			// add to end of heap
 			if (m_itemCount == m_heap.Length)
 				Resize();
 
-			int currentIndex = m_itemCount;
-			m_heap[currentIndex] = item;
-			m_itemCount++;
-
-			// TODO: support min heap
-
-			HeapUtility.BubbleUpMax(m_heap, currentIndex, m_comparer);
+			// add to end of heap and bubble up
+			m_heap[m_itemCount] = item;
+			BubbleUp(m_itemCount++);
 		}
 
 		public T Dequeue()
@@ -40,14 +38,14 @@ namespace DataStructures
 			if (m_itemCount == 0)
 				throw new InvalidOperationException();
 
-			T result = m_heap[0];
+			// save head item (replace with default)
+			T result = default(T);
+			ObjectUtility.Swap(ref m_heap[0], ref result);
 
-			m_heap[0] = m_heap[m_itemCount - 1];
-			m_heap[m_itemCount - 1] = default(T);
-			m_itemCount--;
-
-			HeapUtility.BubbleDownMax(m_heap, m_itemCount, 0, m_comparer);
-
+			// move last item to head and bubble down
+			ObjectUtility.Swap(ref m_heap[0], ref m_heap[--m_itemCount]);
+			BubbleDown(0);
+			
 			return result;
 		}
 		
@@ -58,6 +56,14 @@ namespace DataStructures
 
 			return m_heap[0];
 		}
+
+		protected PriorityQueue(IComparer<T> comparer, int? initialCapacity)
+		{
+			m_comparer = comparer ?? Comparer<T>.Default;
+			m_heap = new T[initialCapacity ?? c_defaultInitialCapacity];
+		}
+
+		protected abstract bool IsHeapPropertySatisfied(IComparer<T> comparer, T parent, T child);
 		
 		private void Resize()
 		{
@@ -69,48 +75,64 @@ namespace DataStructures
 			m_heap = newHeap;
 		}
 
-		static class HeapUtility
+		private void BubbleUp(int currentIndex)
 		{
-			public static void BubbleUpMax(T[] heap, int currentIndex, IComparer<T> comparer)
+			// swap the current item with its parent, until the heap property is satisfied
+			while (currentIndex > 0)
 			{
-				while (currentIndex > 0)
-				{
-					int parentIndex = (currentIndex + 1) / 2 - 1;
-					if (comparer
-						.Is(heap[parentIndex])
-						.GreaterThanOrEqual(heap[currentIndex]))
-					{
-						// heap property satisfied
-						break;
-					}
+				int parentIndex = (currentIndex + 1) / 2 - 1;
+				if (IsHeapPropertySatisfied(m_comparer, m_heap[parentIndex], m_heap[currentIndex]))
+					break;
 
-					ObjectUtility.Swap(ref heap[parentIndex], ref heap[currentIndex]);
-					currentIndex = parentIndex;
-				}
+				ObjectUtility.Swap(ref m_heap[currentIndex], ref m_heap[parentIndex]);
+				currentIndex = parentIndex;
 			}
+		}
 
-			public static void BubbleDownMax(T[] heap, int count, int currentIndex, IComparer<T> comparer)
+		private void BubbleDown(int currentIndex)
+		{
+			// swap the current item with its best child, until the heap property is satisfied
+			int leftChild = currentIndex * 2 + 1;
+			while (leftChild < m_itemCount)
 			{
-				while (currentIndex < count - 1)
-				{
-					int leftChild = currentIndex * 2 + 1;
-					int rightChild = leftChild + 1;
+				// consider swapping the current item with a child; must chose a child which will satisfy the heap property over the other
+				int swappableChild = leftChild;
+				int rightChild = leftChild + 1;
+				if (rightChild < m_itemCount && IsHeapPropertySatisfied(m_comparer, m_heap[rightChild], m_heap[leftChild]))
+					swappableChild = rightChild;
 
-					int maxChild = leftChild;
-					if (rightChild < count && comparer.Is(heap[rightChild]).GreaterThan(heap[leftChild]))
-						maxChild = rightChild;
+				if (IsHeapPropertySatisfied(m_comparer, m_heap[currentIndex], m_heap[swappableChild]))
+					break;
 
-					if (comparer
-						.Is(heap[currentIndex])
-						.GreaterThanOrEqual(heap[maxChild]))
-					{
-						// heap property satisfied
-						break;
-					}
+				ObjectUtility.Swap(ref m_heap[currentIndex], ref m_heap[swappableChild]);
+				currentIndex = swappableChild;
+				leftChild = currentIndex * 2 + 1;
+			}
+		}
 
-					ObjectUtility.Swap(ref heap[maxChild], ref heap[currentIndex]);
-					currentIndex = maxChild;
-				}
+		class MinPriorityQueue : PriorityQueue<T>
+		{
+			public MinPriorityQueue(IComparer<T> comparer, int? initialCapacity)
+				: base(comparer, initialCapacity) { }
+
+			protected override bool IsHeapPropertySatisfied(IComparer<T> comparer, T parent, T child)
+			{
+				return comparer
+					.Is(parent)
+					.LessThanOrEqualTo(child);
+			}
+		}
+
+		class MaxPriorityQueue : PriorityQueue<T>
+		{
+			public MaxPriorityQueue(IComparer<T> comparer, int? initialCapacity)
+				: base(comparer, initialCapacity) { }
+
+			protected override bool IsHeapPropertySatisfied(IComparer<T> comparer, T parent, T child)
+			{
+				return comparer
+					.Is(parent)
+					.GreaterThanOrEqualTo(child);
 			}
 		}
 

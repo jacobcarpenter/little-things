@@ -20,7 +20,7 @@ namespace DataStructures
 			return comparison > 0;
 		}
 
-		public bool GreaterThanOrEqual(T compareTo)
+		public bool GreaterThanOrEqualTo(T compareTo)
 		{
 			int comparison = m_comparer.Compare(m_value, compareTo);
 			return comparison >= 0;
@@ -30,6 +30,12 @@ namespace DataStructures
 		{
 			int comparison = m_comparer.Compare(m_value, compareTo);
 			return comparison < 0;
+		}
+
+		public bool LessThanOrEqualTo(T compareTo)
+		{
+			int comparison = m_comparer.Compare(m_value, compareTo);
+			return comparison <= 0;
 		}
 
 		readonly IComparer<T> m_comparer;
