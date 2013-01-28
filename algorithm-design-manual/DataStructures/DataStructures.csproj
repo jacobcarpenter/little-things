@@ -52,8 +52,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ComparerUtility.cs" />
     <Compile Include="MyDictionary.cs" />
     <Compile Include="MyDictionaryTests.cs" />
+    <Compile Include="ObjectUtility.cs" />
+    <Compile Include="PriorityQueue.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

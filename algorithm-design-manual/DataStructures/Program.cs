@@ -10,11 +10,22 @@ namespace DataStructures
 	{
 		static void Main(string[] args)
 		{
-			InsertionTimings();
+			TestPriorityQueue();
+
+			//InsertionTimings();
 			
-			Console.WriteLine();
-			
-			RandomItemRetrievalTimings(showChecksums: true);
+			//RandomItemRetrievalTimings(showChecksums: true);
+		}
+
+		static void TestPriorityQueue()
+		{
+			var queue = new PriorityQueue<int>();
+
+			for (int n = 1; n <= 100; n++)
+				queue.Enqueue(n);
+	
+			for (int n = 1; n <= 100; n++)
+				Console.WriteLine(queue.Dequeue());
 		}
 
 		// InsertionTimings -- time the insertion of 1000 items into inreasingly large collections.
